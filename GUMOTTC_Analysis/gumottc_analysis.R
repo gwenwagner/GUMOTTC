@@ -128,10 +128,10 @@ emmeans(n_weight_p_lm, ~time_period.x)
 emmeans(n_weight_p_lm, ~woody_forb_grass)
 emtrends(n_weight_p_lm, ~1, var = 'elevation_ft')
 
-### analyze cn ratio - all
+### analyze cn ratio - all (except c4)
 cn_lm <- lmer((cn) ~ time_period.x + elevation_ft + 
           woody_forb_grass + (1|scientific_name) + (1|mckittrick), 
-          data = gumottc_data) # fit the linear model
+          data = gumottc_data, c3_c4.x == 'c3') # fit the linear model
 plot(resid(cn_lm) ~ fitted(cn_lm)) # check the residuals
 summary(cn_lm) # get summary of linear model
 Anova(cn_lm) # shows significance for woody/forbs/grass
@@ -141,7 +141,7 @@ emtrends(cn_lm, ~1, var = 'elevation_ft')
 
 # n15 data and analysis
 ## hypothesis:
-### analyze n15 data - all
+### analyze n15 data - all (except c4)
 n15_lm <- lmer((δ15NAir) ~ time_period.x + elevation_ft + 
                         woody_forb_grass + (1|scientific_name) + (1|mckittrick), 
                data = subset(gumottc_data, c3_c4.x == 'c3')) # fit the linear model
@@ -172,7 +172,6 @@ gumottc_match_species <- summarise(gumottc_match_groupby_species, n_samples = n(
 write.csv(gumottc_match_species, 'gumottc_match_species.csv')
 
 # graphs
-
 theme_set(theme_classic())
 
 legend_title_mck <- "Was Specimen 
@@ -191,7 +190,10 @@ WUE_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
                     name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
   scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
+        legend.title = element_text(size = 12, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Historical', 'Present')) +
   labs(x = "Time Period", y = "WUE (μmol・mol-1)", tag = "A")
 
@@ -204,9 +206,11 @@ WUE_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unkn
   geom_boxplot(color = "black", show.legend = FALSE) +
   scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
                                woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12), 
+        axis.title = element_text(size = 14, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Tissue Type", y = "WUE (μmol・mol-1)", tag = "B")
+  labs(x = "Plant Growth Form", y = "WUE (μmol・mol-1)", tag = "B")
 
 WUE_ppt_plot
 
@@ -221,7 +225,10 @@ N_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
                     name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
   scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
+        legend.title = element_text(size = 12, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Historical', 'Present')) +
   labs(x = "Time Period", y = "Nitrogen (%)", tag = "C")
 
@@ -234,9 +241,11 @@ N_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unknow
   geom_boxplot(color = "black", show.legend = FALSE) +
   scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
                                woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Tissue Type", y = "Nitrogen (%)", tag = "D")
+  labs(x = "Plant Growth Form", y = "Nitrogen (%)", tag = "D")
 
 N_ppt_plot
 
@@ -252,7 +261,10 @@ Niso_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
                     name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
   scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
+        legend.title = element_text(size = 12, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Historical', 'Present')) +
   labs(x = "Time Period", y = "δ15N (‰)", tag = "E")
 
@@ -265,9 +277,11 @@ Niso_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unk
   geom_boxplot(color = "black", show.legend = FALSE) +
   scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
                                woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.25, "cm"), axis.text = element_text(size = 10)) + 
+  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"), 
+        plot.tag = element_text(size = 16, face = "bold")) + 
   scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Tissue Type", y = "δ15N (%)", tag = "F")
+  labs(x = "Plant Growth Form", y = "δ15N (‰)", tag = "F")
 
 Niso_ppt_plot
 
@@ -290,7 +304,7 @@ all_timeppt_plot_g <- cbind(all_time_plot_g, all_ppt_plot_g,
                                         size = "max")
 
 jpeg(filename = "comboplot.jpg",
-     width = 14, height = 18, units = 'in', res = 300)
+     width = 14, height = 16, units = 'in', res = 500)
 grid.newpage()
 grid.draw(all_timeppt_plot_g)
 dev.off()
