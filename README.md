@@ -9,5 +9,6 @@
 	- gumottc_units.xlsx - excel sheet with explanations and units for all columns in the above csv files
 
 - GUMOTTC_Analysis:
-	- gumottc_analysis.R - R script for all data calculations, analysis, and figure creation
+	- gumottc_analysis.R - R script for all data calculations and analysis
+	- gumottc_figures.R - R script to go with gumottc_analysis that contains code for creating figures from the data
 	

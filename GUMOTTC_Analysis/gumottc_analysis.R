@@ -30,28 +30,12 @@ gumottc_data <- left_join(gumottc_characters, gumottc_cn, by= 'id') %>%
                             left_join(., gumottc_isotope, by= 'id')
 head(gumottc_data)
 
-## create match only data
-gumottc_match <- gumottc_data %>% filter(match == "y")
-head(gumottc_match)
-
-## filter data to only look at gumo data
-gumo_data <- gumottc_data %>% filter(time_period.x == "present")
-tail(gumo_data)
-
-## filter data to only look at ttco data
-ttc_data <- gumottc_data %>% filter(time_period.x == "historical")
-head(ttc_data)
-
 # calculations
 ## calculate percent N and C for samples that didn't get CosTech
 gumottc_data$n_weight_p.x <- (gumottc_data$Total_N / (gumottc_data$iso_sample_weight * 1000)) * 100
 tail(gumottc_data)
 
 gumottc_data$c_weight_p.x <- (gumottc_data$Total_C / (gumottc_data$iso_sample_weight * 1000)) * 100
-tail(gumottc_data)
-
-## calculate c:n ratio
-gumottc_data$cn <- gumottc_data$c_weight_p.x / gumottc_data$n_weight_p.x
 tail(gumottc_data)
 
 ## calculate to WUE
@@ -76,10 +60,6 @@ head(gumottc_data)
 # c13 data and analysis
 ## hypothesis: c13 in historical samples is lower than in 
 ## present samples
-
-### calculate means
-mean(gumottc_match[gumottc_match$time_period.x == 'present', 'δ13CVPDB'], na.rm = TRUE)
-mean(gumottc_match[gumottc_match$time_period.x == 'historical', 'δ13CVPDB'], na.rm = TRUE)
 
 ### analyze c13 data - all (except c4)
 δ13cvpdb_lm <- lmer((δ13CVPDB) ~ time_period.x + elevation_ft + 
@@ -109,13 +89,6 @@ emtrends(WUE_lm, ~1, var = 'elevation_ft')
 # n percent data and analysis
 ## hypothesis: nitrogen in historical samples is higher than in
 ## present samples
-### look at distribution of n percent data
-hist(gumottc_data$n_weight_p.x)
-hist(log(gumottc_data$n_weight_p.x))
-
-### calculate means
-mean(gumottc_match[gumottc_match$time_period.x == 'historical', 'n_weight_p.x'])
-mean(gumottc_match[gumottc_match$time_period.x == 'present', 'n_weight_p.x'])
 
 ### analyze n percent data - all (except c4)
 n_weight_p_lm <- lmer((n_weight_p.x) ~ time_period.x + elevation_ft + 
@@ -127,17 +100,6 @@ Anova(n_weight_p_lm) # shows significance for woody/forbs/grass
 emmeans(n_weight_p_lm, ~time_period.x)
 emmeans(n_weight_p_lm, ~woody_forb_grass)
 emtrends(n_weight_p_lm, ~1, var = 'elevation_ft')
-
-### analyze cn ratio - all (except c4)
-cn_lm <- lmer((cn) ~ time_period.x + elevation_ft + 
-          woody_forb_grass + (1|scientific_name) + (1|mckittrick), 
-          data = gumottc_data, c3_c4.x == 'c3') # fit the linear model
-plot(resid(cn_lm) ~ fitted(cn_lm)) # check the residuals
-summary(cn_lm) # get summary of linear model
-Anova(cn_lm) # shows significance for woody/forbs/grass
-emmeans(cn_lm, ~time_period.x)
-emmeans(cn_lm, ~woody_forb_grass)
-emtrends(cn_lm, ~1, var = 'elevation_ft')
 
 # n15 data and analysis
 ## hypothesis:
@@ -170,141 +132,3 @@ head(gumottc_match)
 gumottc_match_groupby_species <- group_by(gumottc_match, scientific_name)
 gumottc_match_species <- summarise(gumottc_match_groupby_species, n_samples = n())
 write.csv(gumottc_match_species, 'gumottc_match_species.csv')
-
-# graphs
-theme_set(theme_classic())
-
-legend_title_mck <- "Was Specimen 
-Collected in
-McKittrick Canyon"
-
-## WUE boxplot - time period comparison
-WUE_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
-  ggplot(aes(x = factor(time_period.x), y = WUE)) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", fill = "white") + 
-  geom_jitter(size = 3, width = 0.2, 
-              aes(fill = factor(woody_forb_grass), shape = factor(mckittrick))) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               unknown = "yellow", woody = "dodgerblue"),
-                    name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
-  scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
-        legend.title = element_text(size = 12, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Historical', 'Present')) +
-  labs(x = "Time Period", y = "WUE (μmol・mol-1)", tag = "A")
-
-WUE_time_plot
-
-## WUE boxplot - plant tissue type comparison
-WUE_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unknown') %>%
-  ggplot(aes(x = factor(woody_forb_grass), y = WUE, fill = factor(woody_forb_grass))) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", show.legend = FALSE) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12), 
-        axis.title = element_text(size = 14, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Growth Form", y = "WUE (μmol・mol-1)", tag = "B")
-
-WUE_ppt_plot
-
-## N boxplot - time period comparison
-N_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
-  ggplot(aes(x = factor(time_period.x), y = n_weight_p.x)) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", fill = "white", outlier.shape = NA) + 
-  geom_jitter(width = 0.2, size = 3, aes(fill = factor(woody_forb_grass), shape = factor(mckittrick))) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               unknown = "yellow", woody = "dodgerblue"),
-                    name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
-  scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
-        legend.title = element_text(size = 12, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Historical', 'Present')) +
-  labs(x = "Time Period", y = "Nitrogen (%)", tag = "C")
-
-N_time_plot
-
-## N boxplot - plant tissue type comparison
-N_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unknown') %>%
-  ggplot(aes(x = factor(woody_forb_grass), y = n_weight_p.x, fill = factor(woody_forb_grass))) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", show.legend = FALSE) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Growth Form", y = "Nitrogen (%)", tag = "D")
-
-N_ppt_plot
-
-## 15N boxplot - time period comparison
-Niso_time_plot <- subset(gumottc_data, c3_c4.x == 'c3') %>%
-  ggplot(aes(x = factor(time_period.x), y = δ15NAir)) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", fill = "white", outlier.shape = NA) + 
-  geom_jitter(size = 3, width = 0.2, 
-              aes(fill = factor(woody_forb_grass), shape = factor(mckittrick))) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               unknown = "yellow", woody = "dodgerblue"),
-                    name = "Plant Growth Form", labels = c('Forb', 'Grass', 'Unknown', 'Woody')) +
-  scale_shape_manual(values = c(22, 24), name = legend_title_mck, labels = c('No', 'Yes')) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) + 
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"), legend.text = element_text(size = 11),
-        legend.title = element_text(size = 12, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Historical', 'Present')) +
-  labs(x = "Time Period", y = "δ15N (‰)", tag = "E")
-
-Niso_time_plot
-
-## 15N boxplot - plant tissue type comparison
-Niso_ppt_plot <- subset(gumottc_data, c3_c4.x == 'c3' & woody_forb_grass != 'unknown') %>%
-  ggplot(aes(x = factor(woody_forb_grass), y = δ15NAir, fill = factor(woody_forb_grass))) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot(color = "black", show.legend = FALSE) +
-  scale_fill_manual(values = c(forb = "green", grass = "darkgreen", 
-                               woody = "dodgerblue")) +
-  theme(axis.ticks.length = unit(.4, "cm"), axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"), 
-        plot.tag = element_text(size = 16, face = "bold")) + 
-  scale_x_discrete(labels = c('Forb', 'Grass', 'Woody')) +
-  labs(x = "Plant Growth Form", y = "δ15N (‰)", tag = "F")
-
-Niso_ppt_plot
-
-## combine graphs
-WUE_time_plot_g <- ggplotGrob(WUE_time_plot)
-N_time_plot_g <- ggplotGrob(N_time_plot)
-Niso_time_plot_g <- ggplotGrob(Niso_time_plot)
-
-all_time_plot_g <- rbind(WUE_time_plot_g, N_time_plot_g, Niso_time_plot_g, 
-                         size = "max")
-
-WUE_ppt_plot_g <- ggplotGrob(WUE_ppt_plot)
-N_ppt_plot_g <- ggplotGrob(N_ppt_plot)
-Niso_ppt_plot_g <- ggplotGrob(Niso_ppt_plot)
-
-all_ppt_plot_g <- rbind(WUE_ppt_plot_g, N_ppt_plot_g, Niso_ppt_plot_g,
-                        size = "max")
-
-all_timeppt_plot_g <- cbind(all_time_plot_g, all_ppt_plot_g, 
-                                        size = "max")
-
-jpeg(filename = "comboplot.jpg",
-     width = 14, height = 16, units = 'in', res = 500)
-grid.newpage()
-grid.draw(all_timeppt_plot_g)
-dev.off()
